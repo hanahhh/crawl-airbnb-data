@@ -1,5 +1,5 @@
 # crawl-airbnb-data
-This project used for crawling data filter by city and price range from airbnb website
+This project used for crawling data filter by city and price range from airbnb website.
 
 ## Set up
 Since Airbnb uses JavaScript to render content, just scrapy on its own cannot suffice sometimes. We need to use Splash as well, which is a plugin created by the Scrapy team that integrates nicely with scrapy.
@@ -30,5 +30,6 @@ Run `scrapy crawl airbnb -a city='{cityname}' -a price_lb='{pricelowerbound}' -a
 `priceupperbound` refers to upper bound for price from 0 to 999. Spider will close if `priceupperbound` is less than
 `pricelowerbound`  
 **Note: Airbnb only returns a maximum of ~300 listings per specific filter (price range). To get more listings, I recommend scraping multiple times using small increments in price and concatenating the datasets.**
+
 ##-----**-----
-Thanks [kailu3](https://github.com/kailu3) for inspired me to create this code
+Thanks [kailu3](https://github.com/kailu3) for inspired me to create this code.
