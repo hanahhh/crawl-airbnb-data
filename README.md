@@ -31,5 +31,5 @@ Run `scrapy crawl airbnb -a city='{cityname}' -a price_lb='{pricelowerbound}' -a
 `pricelowerbound`  
 **Note: Airbnb only returns a maximum of ~300 listings per specific filter (price range). To get more listings, I recommend scraping multiple times using small increments in price and concatenating the datasets.**
 
-##-----**-----
+## -----**-----
 Thanks [kailu3](https://github.com/kailu3) for inspired me to create this code.
