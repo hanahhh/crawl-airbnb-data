@@ -47,7 +47,7 @@ class Airbnb(CrawlSpider):
                     if match_rating:
                         data_dict[room_id]['rating'] = match_rating.group(1)
                         review_count = match_rating.group(2)
-                data_dict[room_id]['city'] = home.get('listing').get('city')
+                data_dict[room_id]['city'] = self.city
                 data_dict[room_id]['contextualPicturesCount'] = home.get('listing').get('contextualPicturesCount')
                 data_dict[room_id]['lat'] = home.get('listing').get('coordinate').get('latitude')
                 data_dict[room_id]['long'] = home.get('listing').get('coordinate').get('longitude')
@@ -63,7 +63,7 @@ class Airbnb(CrawlSpider):
                     stats = primary_host_passport.get('stats')
 
                     if len(stats) > 0:
-                        if data_dict[room_id]['reviewCount'] is None:
+                        if 'reviewCount' not in data_dict[room_id]:
                             data_dict[room_id]['reviewCount'] = stats[0].get('value')
                     if len(stats) > 2:
                         data_dict[room_id]['yearHosting'] = stats[2].get('value')
