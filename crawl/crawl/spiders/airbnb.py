@@ -71,29 +71,26 @@ class Airbnb(CrawlSpider):
                 data_dict[room_id]['canInstantBook'] = home.get('pricingQuote').get('canInstantBook')
                 data_dict[room_id]['weeklyPriceFactor'] = home.get('pricingQuote').get('weeklyPriceFactor')
                 data_dict[room_id]['structuredStayDisplayPrice'] = home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('qualifier')
-                if home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('price'):
-                    match_price = re.search(r'\d+(\.\d+)?', home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('price'))
-                    if match_price:
-                        data_dict[room_id]['price'] = match_price.group()
-                        data_dict[room_id]['price_full'] = home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('price')
+                match = re.search(r'\d+(\.\d+)?',home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('accessibilityLabel'))
+                data_dict[room_id]['price'] = match.group()
 
                 self.export_data.update(data_dict)
 
-        for room_id in data_dict:
-            yield SplashRequest(url=f"{base_url+room_id}?locale=vi", callback=self.parse_details,
-                                meta={'id': room_id},
-                                endpoint="render.html",
-                                args={'wait': '0.5'})
-
-        if pagination_info:
-            new_url = f"https://www.airbnb.com.vn/s/{self.city}/homes?locale=vi&query={self.city}&price_min={self.price_lb}&price_max={self.price_ub}&cursor={pagination_info}"
-            yield SplashRequest(url=new_url, callback=self.parse,
-                                endpoint="render.html",
-                                args={'wait': '0.5'})
+        # for room_id in data_dict:
+        #     yield SplashRequest(url=f"{base_url+room_id}?locale=vi", callback=self.parse_details,
+        #                         meta={'id': room_id},
+        #                         endpoint="render.html",
+        #                         args={'wait': '0.5'})
+        #
+        # if pagination_info:
+        #     new_url = f"https://www.airbnb.com.vn/s/{self.city}/homes?locale=vi&query={self.city}&price_min={self.price_lb}&price_max={self.price_ub}&cursor={pagination_info}"
+        #     yield SplashRequest(url=new_url, callback=self.parse,
+        #                         endpoint="render.html",
+        #                         args={'wait': '0.5'})
 
     def close(self, spider, reason):
         df = pd.DataFrame.from_dict(self.export_data, orient='index')
-        csv_file_path = "crawl/output.csv"
+        csv_file_path = f"crawl/{self.city}.csv"
         df.to_csv(csv_file_path, index=False)
 
     def parse_details(self, response, **kwargs):
