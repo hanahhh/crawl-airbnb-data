@@ -32,49 +32,50 @@ class Airbnb(CrawlSpider):
 
         for index, home in enumerate(data):
             if index > 1:
-                room_id = home.get('listing').get('id')
-                primary_host_passport = None
-                if home.get('listing').get('primaryHostPassport'):
-                    primary_host_passport = home.get('listing').get('primaryHostPassport')
+                if home.get('listing'):
+                    room_id = home.get('listing').get('id')
+                    primary_host_passport = None
+                    if home.get('listing').get('primaryHostPassport'):
+                        primary_host_passport = home.get('listing').get('primaryHostPassport')
 
-                url = base_url + home.get('listing').get('id')
+                    url = base_url + home.get('listing').get('id')
 
-                data_dict[room_id]['room_id'] = room_id
-                data_dict[room_id]['url'] = url
-                review_count = ''
-                if home.get('listing').get('avgRatingLocalized'):
-                    match_rating = re.match(r'(\d+,\d+)\s+\((\d+)\)', home.get('listing').get('avgRatingLocalized'))
-                    if match_rating:
-                        data_dict[room_id]['rating'] = match_rating.group(1)
-                        review_count = match_rating.group(2)
-                data_dict[room_id]['city'] = self.city
-                data_dict[room_id]['contextualPicturesCount'] = home.get('listing').get('contextualPicturesCount')
-                data_dict[room_id]['lat'] = home.get('listing').get('coordinate').get('latitude')
-                data_dict[room_id]['long'] = home.get('listing').get('coordinate').get('longitude')
-                data_dict[room_id]['listingObjType'] = home.get('listing').get('listingObjType')
-                data_dict[room_id]['pdpUrlType'] = home.get('pdpUrlType')
-                data_dict[room_id]['name'] = home.get('listing').get('name')
-                data_dict[room_id]['roomTypeCategory'] = home.get('listing').get('roomTypeCategory')
-                if len(review_count) > 0:
-                    data_dict[room_id]['reviewCount'] = review_count
-                if primary_host_passport:
-                    data_dict[room_id]['isSuperHost'] = primary_host_passport.get('isSuperhost')
-                    data_dict[room_id]['isVerified'] = primary_host_passport.get('isVerified')
-                    stats = primary_host_passport.get('stats')
+                    data_dict[room_id]['room_id'] = room_id
+                    data_dict[room_id]['url'] = url
+                    review_count = ''
+                    if home.get('listing').get('avgRatingLocalized'):
+                        match_rating = re.match(r'(\d+,\d+)\s+\((\d+)\)', home.get('listing').get('avgRatingLocalized'))
+                        if match_rating:
+                            data_dict[room_id]['rating'] = match_rating.group(1)
+                            review_count = match_rating.group(2)
+                    data_dict[room_id]['city'] = self.city
+                    data_dict[room_id]['contextualPicturesCount'] = home.get('listing').get('contextualPicturesCount')
+                    data_dict[room_id]['lat'] = home.get('listing').get('coordinate').get('latitude')
+                    data_dict[room_id]['long'] = home.get('listing').get('coordinate').get('longitude')
+                    data_dict[room_id]['listingObjType'] = home.get('listing').get('listingObjType')
+                    data_dict[room_id]['pdpUrlType'] = home.get('pdpUrlType')
+                    data_dict[room_id]['name'] = home.get('listing').get('name')
+                    data_dict[room_id]['roomTypeCategory'] = home.get('listing').get('roomTypeCategory')
+                    if len(review_count) > 0:
+                        data_dict[room_id]['reviewCount'] = review_count
+                    if primary_host_passport:
+                        data_dict[room_id]['isSuperHost'] = primary_host_passport.get('isSuperhost')
+                        data_dict[room_id]['isVerified'] = primary_host_passport.get('isVerified')
+                        stats = primary_host_passport.get('stats')
 
-                    if len(stats) > 0:
-                        if 'reviewCount' not in data_dict[room_id]:
-                            data_dict[room_id]['reviewCount'] = stats[0].get('value')
-                    if len(stats) > 2:
-                        data_dict[room_id]['yearHosting'] = stats[2].get('value')
+                        if len(stats) > 0:
+                            if 'reviewCount' not in data_dict[room_id]:
+                                data_dict[room_id]['reviewCount'] = stats[0].get('value')
+                        if len(stats) > 2:
+                            data_dict[room_id]['yearHosting'] = stats[2].get('value')
 
-                data_dict[room_id]['canInstantBook'] = home.get('pricingQuote').get('canInstantBook')
-                data_dict[room_id]['weeklyPriceFactor'] = home.get('pricingQuote').get('weeklyPriceFactor')
-                data_dict[room_id]['structuredStayDisplayPrice'] = home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('qualifier')
-                match = re.search(r'\d+(\.\d+)?',home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('accessibilityLabel'))
-                data_dict[room_id]['price'] = match.group()
+                    data_dict[room_id]['canInstantBook'] = home.get('pricingQuote').get('canInstantBook')
+                    data_dict[room_id]['weeklyPriceFactor'] = home.get('pricingQuote').get('weeklyPriceFactor')
+                    data_dict[room_id]['structuredStayDisplayPrice'] = home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('qualifier')
+                    match = re.search(r'\d+(\.\d+)?',home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('accessibilityLabel'))
+                    data_dict[room_id]['price'] = match.group()
 
-                self.export_data.update(data_dict)
+                    self.export_data.update(data_dict)
 
         for room_id in data_dict:
             yield SplashRequest(url=f"{base_url+room_id}?locale=vi&currency=VND", callback=self.parse_details,
