@@ -16,7 +16,7 @@ class Airbnb(CrawlSpider):
         self.export_data = collections.defaultdict(dict)
 
     def start_requests(self):
-        url = f"https://www.airbnb.com.vn/s/{self.city}/homes?locale=vi&query={self.city}&price_min={self.price_lb}&price_max={self.price_ub}&cursor=eyJzZWN0aW9uX29mZnNldCI6MywiaXRlbX"
+        url = f"https://www.airbnb.com.vn/s/{self.city}/homes?locale=vi&query={self.city}&price_min={self.price_lb}&price_max={self.price_ub}&cursor=eyJzZWN0aW9uX29mZnNldCI6MywiaXRlbX&currency=VND"
         yield SplashRequest(url=url, callback=self.parse,
                                 endpoint="render.html",
                                 args={'wait': '0.5'})
@@ -77,13 +77,13 @@ class Airbnb(CrawlSpider):
                 self.export_data.update(data_dict)
 
         for room_id in data_dict:
-            yield SplashRequest(url=f"{base_url+room_id}?locale=vi", callback=self.parse_details,
+            yield SplashRequest(url=f"{base_url+room_id}?locale=vi&currency=VND", callback=self.parse_details,
                                 meta={'id': room_id},
                                 endpoint="render.html",
                                 args={'wait': '0.5'})
 
         if pagination_info:
-            new_url = f"https://www.airbnb.com.vn/s/{self.city}/homes?locale=vi&query={self.city}&price_min={self.price_lb}&price_max={self.price_ub}&cursor={pagination_info}"
+            new_url = f"https://www.airbnb.com.vn/s/{self.city}/homes?locale=vi&query={self.city}&price_min={self.price_lb}&price_max={self.price_ub}&cursor={pagination_info}&currency=VND"
             yield SplashRequest(url=new_url, callback=self.parse,
                                 endpoint="render.html",
                                 args={'wait': '0.5'})
