@@ -68,6 +68,7 @@ class Airbnb(CrawlSpider):
                                 data_dict[room_id]['reviewCount'] = stats[0].get('value')
                         if len(stats) > 2:
                             data_dict[room_id]['yearHosting'] = stats[2].get('value')
+                            data_dict[room_id]['yearHostingLabel'] = stats[2].get('label')
 
                     data_dict[room_id]['canInstantBook'] = home.get('pricingQuote').get('canInstantBook')
                     data_dict[room_id]['weeklyPriceFactor'] = home.get('pricingQuote').get('weeklyPriceFactor')
