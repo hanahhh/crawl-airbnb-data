@@ -4,16 +4,18 @@ from scrapy.spiders import CrawlSpider
 from scrapy_splash import SplashRequest
 import pandas as pd
 import re
+import os
 import numpy as np
 class Airbnb(CrawlSpider):
 
     name = "airbnb"
 
-    def __init__(self, city='', price_lb='', price_ub='', *args, **kwargs):
+    def __init__(self, city='', price_lb='', price_ub='', index='', *args, **kwargs):
         super(Airbnb, self).__init__(*args, **kwargs)
         self.city = city
         self.price_lb = price_lb
         self.price_ub = price_ub
+        self.index = index
         self.export_data = collections.defaultdict(dict)
 
     def start_requests(self):
@@ -130,49 +132,37 @@ class Airbnb(CrawlSpider):
 
     def clean_data(self):
         data = pd.DataFrame.from_dict(self.export_data, orient='index')
-        data['rating'] = pd.to_numeric(data['rating'].replace(',', '.', regex=True))
+        if not data.empty:
+            data['rating'] = pd.to_numeric(data['rating'].replace(',', '.', regex=True))
 
-        data = data.drop(['url', 'pdpUrlType', 'weeklyPriceFactor'], axis=1)
-        data = data.drop(['structuredStayDisplayPrice'], axis=1)
+            data = data.drop(['url', 'pdpUrlType', 'weeklyPriceFactor'], axis=1)
+            data = data.drop(['structuredStayDisplayPrice'], axis=1)
 
-        data = data.replace({True: 1, False: 0, 'TRUE': 1, 'FALSE': 0})
+            data = data.replace({True: 1, False: 0, 'TRUE': 1, 'FALSE': 0})
 
-        data['isSuperHost'] = data['isSuperHost'].fillna(0)
-        data['isVerified'] = data['isVerified'].fillna(0)
-        data['reviewCount'] = data['reviewCount'].fillna(0)
-        data['yearHosting'] = data['yearHosting'].fillna(0)
+            data['isSuperHost'] = data['isSuperHost'].fillna(0)
+            data['isVerified'] = data['isVerified'].fillna(0)
+            data['reviewCount'] = data['reviewCount'].fillna(0)
+            data['yearHosting'] = data['yearHosting'].fillna(0)
 
-        data['yearHosting'] = pd.to_numeric(data['yearHosting'], errors='coerce')
-        data.loc[data['yearHostingLabel'].str.strip() == 'Tháng kinh nghiệm đón tiếp khách', 'yearHosting'] = data.loc[data['yearHostingLabel'].str.strip() == 'Tháng kinh nghiệm đón tiếp khách', 'yearHosting'] / 12
-        data = data.drop(['yearHostingLabel'], axis=1)
+            data['yearHosting'] = pd.to_numeric(data['yearHosting'], errors='coerce')
+            data.loc[data['yearHostingLabel'].str.strip() == 'Tháng kinh nghiệm đón tiếp khách', 'yearHosting'] = data.loc[data['yearHostingLabel'].str.strip() == 'Tháng kinh nghiệm đón tiếp khách', 'yearHosting'] / 12
+            data = data.drop(['yearHostingLabel'], axis=1)
 
-        one_hot_encoded_1 = pd.get_dummies(data['roomTypeCategory'])
-        pd.concat([data, one_hot_encoded_1], axis=1)
-        one_hot_encoded_2 = pd.get_dummies(data['listingObjType'])
-        pd.concat([data, one_hot_encoded_2], axis=1)
+            one_hot_encoded_1 = pd.get_dummies(data['roomTypeCategory'])
+            pd.concat([data, one_hot_encoded_1], axis=1)
+            one_hot_encoded_2 = pd.get_dummies(data['listingObjType'])
+            pd.concat([data, one_hot_encoded_2], axis=1)
 
-        system_cols = [col for col in data.columns if col.startswith('SYSTEM_')]
-        data[system_cols] = data[system_cols].fillna(value=2)
+            system_cols = [col for col in data.columns if col.startswith('SYSTEM_')]
+            data[system_cols] = data[system_cols].fillna(value=2)
 
-        average_capacity = data.groupby('roomTypeCategory')['maxGuestCapacity'].mean()
-        data['maxGuestCapacity'] = data.apply(lambda row: average_capacity[row['roomTypeCategory']] if pd.isna(row['maxGuestCapacity']) else row['maxGuestCapacity'], axis=1)
-        data['maxGuestCapacity'] = data['maxGuestCapacity'].round()
+            average_capacity = data.groupby('roomTypeCategory')['maxGuestCapacity'].mean()
+            data['maxGuestCapacity'] = data.apply(lambda row: average_capacity[row['roomTypeCategory']] if pd.isna(row['maxGuestCapacity']) else row['maxGuestCapacity'], axis=1)
+            data['maxGuestCapacity'] = data['maxGuestCapacity'].round()
         return data
-
-
-
-
-
-
-
-
-
-
-
-
 
     def close(self, spider, reason):
         df = self.clean_data()
-        #df_filled = df.replace({None: pd.NA})
-        csv_file_path = f"crawl/{self.city}.csv"
+        csv_file_path = f"crawl/{self.city}_{self.index}.csv"
         df.to_csv(csv_file_path, index=False, na_rep='NaN')
