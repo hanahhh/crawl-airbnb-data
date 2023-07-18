@@ -31,5 +31,9 @@ Run `scrapy crawl airbnb -a city='{cityname}' -a price_lb='{pricelowerbound}' -a
 `pricelowerbound`  
 **Note: Airbnb only returns a maximum of ~300 listings per specific filter (price range). To get more listings, I recommend scraping multiple times using small increments in price and concatenating the datasets.**
 
+## Crawling by sript file
+Create `city.txt` file that contains all cities that you want to crawl from.
+
+Open command and run `python -m crawl.script` to crawl data with price getting bigger by `200.000 VND` from `0` to `20.000.000`
 ## -----**-----
 Thanks [kailu3](https://github.com/kailu3) for inspired me to create this code.
