@@ -4,6 +4,7 @@ from scrapy.spiders import CrawlSpider
 from scrapy_splash import SplashRequest
 import pandas as pd
 import re
+import numpy as np
 class Airbnb(CrawlSpider):
 
     name = "airbnb"
@@ -20,6 +21,15 @@ class Airbnb(CrawlSpider):
         yield SplashRequest(url=url, callback=self.parse,
                                 endpoint="render.html",
                                 args={'wait': '0.5'})
+
+    def extract_first_number(self, text):
+        match = re.search(r'₫([\d.,]+)', text)
+        if match:
+            number_str = match.group(1)
+            number_str = number_str.replace('.', '')
+            return number_str.split(",")[0]
+        else:
+            return None
 
     def parse(self, response, **kwargs):
         path = response.xpath("//script[@id='data-deferred-state']/text()").get()
@@ -43,11 +53,13 @@ class Airbnb(CrawlSpider):
                     data_dict[room_id]['room_id'] = room_id
                     data_dict[room_id]['url'] = url
                     review_count = ''
+                    data_dict[room_id]['rating'] = '0'
                     if home.get('listing').get('avgRatingLocalized'):
                         match_rating = re.match(r'(\d+,\d+)\s+\((\d+)\)', home.get('listing').get('avgRatingLocalized'))
                         if match_rating:
                             data_dict[room_id]['rating'] = match_rating.group(1)
                             review_count = match_rating.group(2)
+
                     data_dict[room_id]['city'] = self.city
                     data_dict[room_id]['contextualPicturesCount'] = home.get('listing').get('contextualPicturesCount')
                     data_dict[room_id]['lat'] = home.get('listing').get('coordinate').get('latitude')
@@ -73,8 +85,8 @@ class Airbnb(CrawlSpider):
                     data_dict[room_id]['canInstantBook'] = home.get('pricingQuote').get('canInstantBook')
                     data_dict[room_id]['weeklyPriceFactor'] = home.get('pricingQuote').get('weeklyPriceFactor')
                     data_dict[room_id]['structuredStayDisplayPrice'] = home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('qualifier')
-                    match = re.search(r'\d+(\.\d+)?',home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('accessibilityLabel'))
-                    data_dict[room_id]['price'] = match.group()
+                    data_dict[room_id]['price'] = self.extract_first_number(home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('accessibilityLabel'))#re.sub(r'[^\d]', '', home.get('pricingQuote').get('structuredStayDisplayPrice').get('primaryLine').get('accessibilityLabel'))
+
 
                     self.export_data.update(data_dict)
 
@@ -92,8 +104,10 @@ class Airbnb(CrawlSpider):
 
     def close(self, spider, reason):
         df = pd.DataFrame.from_dict(self.export_data, orient='index')
+        df_filled = df.replace({None: pd.NA})
         csv_file_path = f"crawl/{self.city}.csv"
-        df.to_csv(csv_file_path, index=False)
+        print(df_filled.head())
+        df_filled.to_csv(csv_file_path, index=False, na_rep='NaN')
 
     def parse_details(self, response, **kwargs):
         id = response.meta['id']
